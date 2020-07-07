@@ -1,0 +1,16 @@
+{
+  "name": "gifted-class-wreck-n64co",
+  "productName": "gifted-class-wreck-n64co",
+  "description": "My Electron application description",
+  "keywords": [],
+  "main": "./main.js",
+  "version": "1.0.0",
+  "author": "Joseph Chiang",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "9.0.2"
+  }
+}
