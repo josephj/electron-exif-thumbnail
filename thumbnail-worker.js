@@ -54,8 +54,12 @@ const fetchEXIFThumb = (url) => {
 
 onmessage = (e) => {
   const { path } = e.data;
-  fetchEXIFThumb(path).then((url) => {
-    console.log("path", path, "url", url);
-    postMessage({ url });
-  });
+  fetchEXIFThumb(path)
+    .then((url) => {
+      // console.log("path", path, "url", url);
+      postMessage({ url });
+    })
+    .catch((e) => {
+      console.info("Error: ", e.message, path);
+    });
 };

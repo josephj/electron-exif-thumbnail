@@ -17,14 +17,45 @@ document.getElementById("load-photos").addEventListener("click", async () => {
       return;
     }
 
-    files.forEach((file) => {
+    files.forEach((file, id) => {
       const worker = new Worker("thumbnail-worker.js");
+
+      const itemEl = document.createElement("div");
+      itemEl.id = `item-${id}`;
+      itemEl.style.display = "inline-block";
+      itemEl.style.position = "relative";
+      itemEl.style.height = "220px";
+      itemEl.style.background = "#efefef";
+      itemEl.style.margin = "0 5px 5px 0";
+      itemEl.style.width = "220px";
+      listEl.appendChild(itemEl);
+
+      const lableEl = document.createElement("div");
+      lableEl.style.position = "absolute";
+      lableEl.style.textShadow = "0 1px 5px rgba(255, 255, 255, 0.3)";
+      lableEl.style.bottom = "5px";
+      lableEl.style.right = "5px";
+      lableEl.style.fontFamily = "Arial";
+      lableEl.style.fontSize = "11px;";
+      lableEl.innerHTML = file;
+      itemEl.appendChild(lableEl);
+
       worker.onmessage = function (e) {
         const { url } = e.data;
-        const imageEl = document.createElement("img");
-        imageEl.src = url;
-        imageEl.width = 300;
-        listEl.appendChild(imageEl);
+        const itemEl = document.querySelector(`#item-${id}`);
+        if (itemEl) {
+          const image = new Image();
+          image.onload = () => {
+            const imgEl = document.createElement("img");
+            imgEl.src = url;
+            imgEl.width = 220;
+            imgEl.height = 220;
+            imgEl.style.display = "block";
+            imgEl.style.objectFit = "contain";
+            itemEl.appendChild(imgEl);
+          };
+          image.src = url;
+        }
       };
       worker.postMessage({ path: path.join(folderPath, file) });
     });
