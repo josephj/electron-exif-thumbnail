@@ -5,33 +5,35 @@ const appendBuffer = (buffer1, buffer2) => {
   return tmp;
 };
 
-const fetchEXIFThumb = (url) => {
-  return fetch(url)
+const fetchEXIFThumb = (url) =>
+  fetch(url)
     .then((response) => {
       const reader = response.body.getReader();
-      let start, end, buffer;
+      let start;
+      let end;
+      let buffer;
       return new ReadableStream({
         start(controller) {
-          return pump();
           function pump() {
             return reader.read().then(({ done, value }) => {
+              console.log(url, 'value', value.length);
               buffer = buffer
                 ? appendBuffer(buffer, value)
                 : new Uint8Array(value);
-              for (var i = 2; i < buffer.length; i++) {
-                if (buffer[i] != 0xff) continue;
-                if (!start && buffer[i + 1] == 0xd8) {
+              for (let i = 2, j = buffer.length; i < j; i += 1) {
+                if (buffer[i] !== 0xff) continue; // eslint-disable-line
+                if (!start && buffer[i + 1] === 0xd8) {
                   start = i;
-                  continue;
+                  continue; // eslint-disable-line
                 }
-                if (start && buffer[i + 1] == 0xd9) end = i + 2;
+                if (start && buffer[i + 1] === 0xd9) end = i + 2;
               }
 
               if (start && end) {
                 const stream = buffer.subarray(start, end);
                 controller.enqueue(stream);
                 controller.close();
-                reader.cancel();
+                reader.cancel('success');
                 return;
               }
 
@@ -40,26 +42,35 @@ const fetchEXIFThumb = (url) => {
                 return;
               }
 
+              // stop streaming
+              if (buffer.length > 80000) {
+                controller.close();
+                reader.cancel('cannot find thumbail');
+                return;
+              }
+
               controller.enqueue(value);
-              return pump();
+              return pump(); // eslint-disable-line
             });
           }
+          return pump();
+        },
+        cancel(reason) {
+          throw reason;
         },
       });
     })
     .then((stream) => new Response(stream))
-    .then((response) => response.blob())
-    .then((blob) => URL.createObjectURL(blob));
-};
+    .then((response) => response.blob());
 
 onmessage = (e) => {
   const { path } = e.data;
   fetchEXIFThumb(path)
-    .then((url) => {
+    .then(blob => {
       // console.log("path", path, "url", url);
-      postMessage({ url });
+      postMessage({ blob });
     })
     .catch((e) => {
-      console.info("Error: ", e.message, path);
+      console.info('Error: ', e.message, path);
     });
 };
